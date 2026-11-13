@@ -95,6 +95,7 @@ export type Alert = {
 
 export type Snapshot = {
   ticker: string;
+  companyName: string;
   price: number;
   marketCap: number;
   trailingPe: number | null;

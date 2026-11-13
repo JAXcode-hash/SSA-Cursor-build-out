@@ -101,6 +101,7 @@ export function longFixture(): { alert: Alert; snapshot: Snapshot } {
   const tags = staplesTags();
   const snapshot: Snapshot = {
     ticker: "KO",
+    companyName: "The Coca-Cola Company",
     price: 99,
     marketCap: 80_000_000_000,
     trailingPe: 15,
@@ -136,6 +137,7 @@ export function shortFixture(): { alert: Alert; snapshot: Snapshot } {
   });
   const snapshot: Snapshot = {
     ticker: "XOM",
+    companyName: "Exxon Mobil Corporation",
     price: 110,
     marketCap: 40_000_000_000,
     trailingPe: null,

@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { alertPayload } from "../bot/lib/discord.js";
+import { alertPayload, incomePayload } from "../bot/lib/discord.js";
 import { combinePrice, figuresFromFacts } from "../bot/lib/sec.js";
 import { statedMentions } from "../bot/lib/supply.js";
 import { assignTags, normalizeSector } from "../bot/lib/tags.js";
@@ -69,9 +69,29 @@ test("discord payload is one SSA Desk embed", () => {
   assert.equal(payload.embeds[0]?.color, 0x2ecc71);
   assert.equal(payload.embeds[0]?.footer?.text, DISCLAIMER);
   const names = payload.embeds[0]?.fields.map((field) => field.name);
-  for (const name of ["Price", "Market cap", "Trailing P/E", "Size", "Style", "Cycle", "Sector", "Entry", "Target", "Invalidation", "Sentiment", "Supply chain", "Theme"]) {
+  for (const name of ["Company", "Price", "Market cap", "Trailing P/E", "Size", "Style", "Cycle", "Sector", "Entry", "Target", "Invalidation", "Sentiment", "Supply chain", "Theme"]) {
     assert.ok(names?.includes(name), name);
   }
+});
+
+test("a dividend payer gets its own income message", () => {
+  const payload = incomePayload({
+    ticker: "KO",
+    companyName: "The Coca-Cola Company",
+    price: 99.13,
+    dividendPerShare: 2.04,
+    size: "Large Cap",
+  });
+  assert.equal(payload.embeds.length, 1);
+  assert.equal(payload.embeds[0]?.title, "Income KO");
+  assert.equal(payload.embeds[0]?.color, 0xf1c40f);
+  assert.equal(payload.embeds[0]?.fields.find((field) => field.name === "Company")?.value, "The Coca-Cola Company");
+  const longPayload = alertPayload(longFixture().alert, {
+    companyName: "The Coca-Cola Company",
+    dividendPerShare: 2.04,
+  });
+  assert.equal(longPayload.embeds[0]?.title, "Long KO");
+  assert.notEqual(longPayload.embeds[0]?.color, payload.embeds[0]?.color);
 });
 
 test("short embed is red", () => {

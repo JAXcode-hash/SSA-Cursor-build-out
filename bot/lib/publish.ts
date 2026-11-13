@@ -1,6 +1,6 @@
 import { mkdir, writeFile } from "node:fs/promises";
 import { join } from "node:path";
-import { alertPayload, postDiscord, type DiscordPayload } from "./discord.js";
+import { alertPayload, incomePayload, postDiscord, type DiscordPayload } from "./discord.js";
 import type { SqlClient } from "./db.js";
 import { openOpportunity } from "./ledger.js";
 import type { Alert } from "./types.js";
@@ -25,7 +25,10 @@ export async function publishPrepared(input: {
 }): Promise<PublishResult> {
   const verdict = validateAlert(input.alert, input.snapshot);
   if (!verdict.ok) return { accepted: false, reason: verdict.reason, posted: false };
-  const payload = alertPayload(input.alert);
+  const payload = alertPayload(input.alert, {
+    companyName: input.snapshot.companyName,
+    dividendPerShare: input.snapshot.dividendPerShare,
+  });
   const opened = await openOpportunity(input.db, input.alert, input.now);
   if (!opened.ok) return { accepted: false, reason: opened.reason, posted: false, payload };
   if (input.stateDir) {
@@ -38,6 +41,22 @@ export async function publishPrepared(input: {
   }
   if (!input.post) return { accepted: true, opportunityId: opened.row.id, posted: false, payload };
   const delivery = await postDiscord(payload);
+  if (
+    delivery.posted &&
+    input.snapshot.tags.styles.includes("Dividend Stock") &&
+    input.snapshot.dividendPerShare !== null &&
+    input.snapshot.dividendPerShare > 0
+  ) {
+    await postDiscord(
+      incomePayload({
+        ticker: input.snapshot.ticker,
+        companyName: input.snapshot.companyName,
+        price: input.snapshot.price,
+        dividendPerShare: input.snapshot.dividendPerShare,
+        size: input.snapshot.tags.size,
+      }),
+    );
+  }
   return {
     accepted: true,
     opportunityId: opened.row.id,
