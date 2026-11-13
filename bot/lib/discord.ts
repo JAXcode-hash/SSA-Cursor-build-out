@@ -17,6 +17,7 @@ const RED = 0xe74c3c;
 const SLATE = 0x95a5a6;
 const GOLD = 0xf1c40f;
 const PURPLE = 0x8e44ad;
+const AMBER = 0xe67e22;
 
 function field(name: string, value: string): { name: string; value: string; inline: boolean } {
   return { name, value: value.slice(0, 1024), inline: true };
@@ -142,6 +143,48 @@ export function sleevePayload(input: {
         ],
         footer: {
           text: "Trailing six-month price returns versus the benchmark. Not a forecast. Research alert only. Not a solicitation to buy or sell any security.",
+        },
+      },
+    ],
+  };
+}
+
+export function earlyPayload(input: {
+  horizon: number;
+  picks: Array<{ ticker: string; companyName: string; excess20: number; excessLong: number }>;
+  hitRate: number | null;
+  baseRate: number | null;
+  signals: number;
+  edge: boolean;
+}): DiscordPayload {
+  const lines =
+    input.picks.length === 0
+      ? "No name is leading SPY over 20 sessions while the longer window still lags."
+      : input.picks
+          .map(
+            (row, index) =>
+              `${index + 1}. ${row.companyName} (${row.ticker}) 20-day excess ${formatPct(row.excess20)}, longer excess ${formatPct(row.excessLong)}`,
+          )
+          .join("\n");
+  const hit = input.hitRate === null ? "n/a" : formatPct(input.hitRate);
+  const base = input.baseRate === null ? "n/a" : formatPct(input.baseRate);
+  return {
+    username: "SSA Desk",
+    embeds: [
+      {
+        title: "Early signal",
+        description: lines.slice(0, 4000),
+        color: AMBER,
+        fields: [
+          field("Names", String(input.picks.length)),
+          field("Horizon", `${input.horizon} sessions`),
+          field("Past signals", String(input.signals)),
+          field("Signal hit rate", hit),
+          field("Base hit rate", base),
+          field("Measured edge", input.edge ? "yes" : "no"),
+        ],
+        footer: {
+          text: "Public daily prices only. A hit is a positive excess return versus SPY over the next 20 sessions. This is not an order. Research alert only. Not a solicitation to buy or sell any security.",
         },
       },
     ],
