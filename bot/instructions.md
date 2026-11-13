@@ -6,6 +6,8 @@ On a desk run, call `review-opportunities` first. Then, for each watchlist or th
 
 The core watchlist is the quality and income book. `risk-sleeve` is the separate higher-risk satellite. It keeps up to 12 names from `data/risk-sleeve.json` that beat SPY over the trailing six months, with beta of at least 1.2 and volatility above SPY. Report that set as one sleeve. Membership is not a long. A sleeve name still has to pass the long gate before `publish-alert`.
 
+`early-signal` searches `data/early-universe.json`, a wider liquid book than the 12-name sleeve. A name qualifies when the last 20 sessions beat SPY by at least 2 points, the longer window still lags SPY, and at least two confirmations are present: RSI 50 to 68, price above the 50-day average, price not extended, or rising volume. Rank the names by the 20-day excess. Call a name a big position when that excess is at least 8 points. Report the walk-forward hit rate, the big-move hit rate, and the base rate. An early signal is not a long and it is not an order.
+
 Publish with `publish-alert` only when a strategy subagent returns `side` `long` or `short`. A `pass` is not an alert. Copy price, market cap, P/E, technicals, entry, exit, sentiment, supply chain, themes, and tags from the tool payloads. If `publish-alert` rejects the JSON, report its reason and do not invent a replacement number.
 
 The ledger allows one open row per ticker and side. Do not ask for a second one.

@@ -17,6 +17,7 @@ const RED = 0xe74c3c;
 const SLATE = 0x95a5a6;
 const GOLD = 0xf1c40f;
 const PURPLE = 0x8e44ad;
+const AMBER = 0xe67e22;
 
 function field(name: string, value: string): { name: string; value: string; inline: boolean } {
   return { name, value: value.slice(0, 1024), inline: true };
@@ -142,6 +143,58 @@ export function sleevePayload(input: {
         ],
         footer: {
           text: "Trailing six-month price returns versus the benchmark. Not a forecast. Research alert only. Not a solicitation to buy or sell any security.",
+        },
+      },
+    ],
+  };
+}
+
+export function earlyPayload(input: {
+  horizon: number;
+  searched?: number;
+  picks: Array<{ ticker: string; companyName: string; excess20: number; excessLong: number; big?: boolean }>;
+  hitRate: number | null;
+  baseRate: number | null;
+  signals: number;
+  edge: boolean;
+  bigHitRate?: number | null;
+  bigSignals?: number;
+  bigEdge?: boolean;
+}): DiscordPayload {
+  const lines =
+    input.picks.length === 0
+      ? "No name is leading SPY over 20 sessions while the longer window still lags."
+      : input.picks
+          .map((row, index) => {
+            const size = row.big ? "big" : "early";
+            return `${index + 1}. ${row.companyName} (${row.ticker}) ${size} 20-day excess ${formatPct(row.excess20)}, longer excess ${formatPct(row.excessLong)}`;
+          })
+          .join("\n");
+  const hit = input.hitRate === null ? "n/a" : formatPct(input.hitRate);
+  const base = input.baseRate === null ? "n/a" : formatPct(input.baseRate);
+  const bigHit = input.bigHitRate === null || input.bigHitRate === undefined ? "n/a" : formatPct(input.bigHitRate);
+  return {
+    username: "SSA Desk",
+    embeds: [
+      {
+        title: "Early positions",
+        description: lines.slice(0, 4000),
+        color: AMBER,
+        fields: [
+          field("Searched", String(input.searched ?? input.picks.length)),
+          field("Names", String(input.picks.length)),
+          field("Big moves", String(input.picks.filter((row) => row.big).length)),
+          field("Horizon", `${input.horizon} sessions`),
+          field("Past signals", String(input.signals)),
+          field("Signal hit rate", hit),
+          field("Big-move hit rate", bigHit),
+          field("Big-move samples", String(input.bigSignals ?? 0)),
+          field("Base hit rate", base),
+          field("Measured edge", input.edge ? "yes" : "no"),
+          field("Big-move edge", input.bigEdge ? "yes" : "no"),
+        ],
+        footer: {
+          text: "Public daily prices only. A hit is a positive excess return versus SPY over the next 20 sessions. This is not an order. Research alert only. Not a solicitation to buy or sell any security.",
         },
       },
     ],

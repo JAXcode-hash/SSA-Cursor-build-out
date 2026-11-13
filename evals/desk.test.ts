@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { alertPayload, incomePayload, sleevePayload } from "../bot/lib/discord.js";
+import { alertPayload, earlyPayload, incomePayload, sleevePayload } from "../bot/lib/discord.js";
+import { isEarly, rankByMove } from "../bot/lib/predict.js";
 import { riskReading } from "../bot/lib/risk.js";
 import { chooseSleeve } from "../bot/lib/sleeve.js";
 import type { Bar } from "../bot/lib/types.js";
@@ -286,6 +287,65 @@ test("risk sleeve keeps a high-beta name that beat the benchmark and drops a low
   assert.equal(payload.embeds[0]?.title, "Risk sleeve");
   assert.equal(payload.embeds[0]?.color, 0x8e44ad);
   assert.match(payload.embeds[0]?.description ?? "", /Leader Inc\. \(LEAD\)/);
+});
+
+test("early signal requires leadership that the longer window has not confirmed", () => {
+  const early = isEarly({
+    excess20: 0.04,
+    excessLong: -0.02,
+    rsi14: 58,
+    aboveSma50: true,
+    extended: false,
+    volumeRatio: 1.4,
+  });
+  assert.equal(early.signal, true);
+  assert.equal(early.score, 1);
+  const alreadyWon = isEarly({
+    excess20: 0.04,
+    excessLong: 0.1,
+    rsi14: 58,
+    aboveSma50: true,
+    extended: false,
+    volumeRatio: 1.4,
+  });
+  assert.equal(alreadyWon.signal, false);
+  const crowded = isEarly({
+    excess20: 0.04,
+    excessLong: -0.02,
+    rsi14: 75,
+    aboveSma50: true,
+    extended: true,
+    volumeRatio: 0.8,
+  });
+  assert.equal(crowded.signal, false);
+  const quietVolume = isEarly({
+    excess20: 0.04,
+    excessLong: -0.02,
+    rsi14: 58,
+    aboveSma50: true,
+    extended: false,
+    volumeRatio: 0.7,
+  });
+  assert.equal(quietVolume.signal, true);
+  const payload = earlyPayload({
+    horizon: 20,
+    picks: [{ ticker: "NEW", companyName: "New Leader Inc.", excess20: 0.04, excessLong: -0.02 }],
+    hitRate: 0.55,
+    baseRate: 0.48,
+    signals: 22,
+    edge: true,
+  });
+  assert.equal(payload.embeds.length, 1);
+  assert.equal(payload.embeds[0]?.title, "Early positions");
+  const ranked = rankByMove([
+    { ticker: "SMALL", excess20: 0.03 },
+    { ticker: "LARGE", excess20: 0.12 },
+    { ticker: "MID", excess20: 0.09 },
+  ]);
+  assert.deepEqual(ranked.big.map((row) => row.ticker), ["LARGE", "MID"]);
+  assert.deepEqual(ranked.other.map((row) => row.ticker), ["SMALL"]);
+  assert.equal(payload.embeds[0]?.color, 0xe67e22);
+  assert.match(payload.embeds[0]?.description ?? "", /New Leader Inc\. \(NEW\)/);
 });
 
 test("isolated database closes", async () => {

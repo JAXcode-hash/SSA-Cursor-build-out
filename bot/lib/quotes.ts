@@ -24,6 +24,7 @@ export function parseChart(payload: unknown): { bars: Bar[]; profile: QuoteProfi
     const highs = quote.high as Array<number | null>;
     const lows = quote.low as Array<number | null>;
     const closes = quote.close as Array<number | null>;
+    const volumes = quote.volume as Array<number | null> | undefined;
     timestamps.forEach((stamp, index) => {
       const close = closes?.[index];
       const high = highs?.[index];
@@ -32,12 +33,14 @@ export function parseChart(payload: unknown): { bars: Bar[]; profile: QuoteProfi
       if (typeof stamp !== "number" || typeof close !== "number" || typeof high !== "number" || typeof low !== "number") {
         return;
       }
+      const volume = volumes?.[index];
       bars.push({
         date: new Date(stamp * 1000).toISOString().slice(0, 10),
         open: typeof open === "number" ? open : close,
         high,
         low,
         close,
+        ...(typeof volume === "number" ? { volume } : {}),
       });
     });
   }
