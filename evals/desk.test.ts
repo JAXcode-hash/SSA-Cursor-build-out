@@ -1,6 +1,9 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { alertPayload, incomePayload } from "../bot/lib/discord.js";
+import { alertPayload, incomePayload, sleevePayload } from "../bot/lib/discord.js";
+import { riskReading } from "../bot/lib/risk.js";
+import { chooseSleeve } from "../bot/lib/sleeve.js";
+import type { Bar } from "../bot/lib/types.js";
 import { combinePrice, figuresFromFacts } from "../bot/lib/sec.js";
 import { statedMentions } from "../bot/lib/supply.js";
 import { assignTags, normalizeSector } from "../bot/lib/tags.js";
@@ -234,6 +237,55 @@ test("local route stays commercial unless MODEL_ROUTE=local", () => {
   else process.env.MODEL_ROUTE = previous;
   assert.equal(localChatUrl("http://127.0.0.1:8000/v1"), "http://127.0.0.1:8000/v1/chat/completions");
   assert.equal(localChatUrl("http://127.0.0.1:8000"), "http://127.0.0.1:8000/v1/chat/completions");
+});
+
+function series(daily: (index: number) => number): Bar[] {
+  const bars: Bar[] = [];
+  let price = 100;
+  const date = new Date(Date.UTC(2026, 0, 1));
+  for (let index = 0; index < 80; index += 1) {
+    bars.push({ date: date.toISOString().slice(0, 10), open: price, high: price, low: price, close: price });
+    price *= 1 + daily(index);
+    date.setUTCDate(date.getUTCDate() + 1);
+  }
+  return bars;
+}
+
+test("risk sleeve keeps a high-beta name that beat the benchmark and drops a low-beta name", () => {
+  const marketMove = (index: number) => (index % 2 === 0 ? 0.02 : -0.005);
+  const market = series(marketMove);
+  const leader = series((index) => marketMove(index) * 2);
+  const laggard = series((index) => marketMove(index) * 0.4);
+  const leaderRisk = riskReading(leader, market);
+  const laggardRisk = riskReading(laggard, market);
+  assert.ok(leaderRisk);
+  assert.ok(laggardRisk);
+  assert.ok(leaderRisk.beta > 1.5);
+  assert.ok(leaderRisk.excessReturn > 0);
+  assert.ok(laggardRisk.beta < 1);
+  const marketVol = riskReading(market, market);
+  assert.ok(marketVol);
+  const choice = chooseSleeve(
+    [
+      { ticker: "LEAD", companyName: "Leader Inc.", price: 100, marketCap: 5_000_000_000, ...leaderRisk },
+      { ticker: "LAG", companyName: "Laggard Inc.", price: 100, marketCap: 5_000_000_000, ...laggardRisk },
+    ],
+    { size: 12, minBeta: 1.2, minSessions: 60, marketCapFloor: 2_000_000_000 },
+    marketVol.volatility,
+  );
+  assert.deepEqual(choice.held.map((row) => row.ticker), ["LEAD"]);
+  assert.equal(choice.rejected.some((row) => row.ticker === "LAG"), true);
+  const payload = sleevePayload({
+    benchmark: "SPY",
+    benchmarkReturn: leaderRisk.marketReturn,
+    held: choice.held,
+    sleeveReturn: leaderRisk.stockReturn,
+    excessReturn: leaderRisk.excessReturn,
+  });
+  assert.equal(payload.embeds.length, 1);
+  assert.equal(payload.embeds[0]?.title, "Risk sleeve");
+  assert.equal(payload.embeds[0]?.color, 0x8e44ad);
+  assert.match(payload.embeds[0]?.description ?? "", /Leader Inc\. \(LEAD\)/);
 });
 
 test("isolated database closes", async () => {

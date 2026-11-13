@@ -16,6 +16,7 @@ const GREEN = 0x2ecc71;
 const RED = 0xe74c3c;
 const SLATE = 0x95a5a6;
 const GOLD = 0xf1c40f;
+const PURPLE = 0x8e44ad;
 
 function field(name: string, value: string): { name: string; value: string; inline: boolean } {
   return { name, value: value.slice(0, 1024), inline: true };
@@ -103,6 +104,44 @@ export function incomePayload(input: {
         ],
         footer: {
           text: "Research alert only. Not a solicitation to buy or sell any security. Dividend income is the latest annual dividend per share from SEC divided into the latest price.",
+        },
+      },
+    ],
+  };
+}
+
+export function sleevePayload(input: {
+  benchmark: string;
+  benchmarkReturn: number | null;
+  held: Array<{ ticker: string; companyName: string; beta: number; excessReturn: number }>;
+  sleeveReturn: number | null;
+  excessReturn: number | null;
+}): DiscordPayload {
+  const lines =
+    input.held.length === 0
+      ? "No candidate cleared the risk sleeve rules."
+      : input.held
+          .map(
+            (row, index) =>
+              `${index + 1}. ${row.companyName} (${row.ticker}) beta ${row.beta.toFixed(2)}, excess ${formatPct(row.excessReturn)}`,
+          )
+          .join("\n");
+  return {
+    username: "SSA Desk",
+    embeds: [
+      {
+        title: "Risk sleeve",
+        description: lines.slice(0, 4000),
+        color: PURPLE,
+        fields: [
+          field("Names", String(input.held.length)),
+          field("Benchmark", input.benchmark),
+          field("Benchmark return", input.benchmarkReturn === null ? "n/a" : formatPct(input.benchmarkReturn)),
+          field("Sleeve return", input.sleeveReturn === null ? "n/a" : formatPct(input.sleeveReturn)),
+          field("Sleeve excess", input.excessReturn === null ? "n/a" : formatPct(input.excessReturn)),
+        ],
+        footer: {
+          text: "Trailing six-month price returns versus the benchmark. Not a forecast. Research alert only. Not a solicitation to buy or sell any security.",
         },
       },
     ],
