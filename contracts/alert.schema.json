@@ -1,0 +1,122 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ssa-desk.local/contracts/alert.schema.json",
+  "title": "SSA Desk alert",
+  "description": "Shared output of every desk subagent. Prices, ratios, tags, and bands must be copied from tool payloads. A pass is not published.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "ticker",
+    "side",
+    "horizon",
+    "thesis",
+    "evidenceIds",
+    "fundamentals",
+    "technicals",
+    "entry",
+    "exit",
+    "sentiment",
+    "supplyChain",
+    "themes",
+    "tags",
+    "disclaimer"
+  ],
+  "properties": {
+    "ticker": { "type": "string", "pattern": "^[A-Z][A-Z0-9.\\-]{0,9}$" },
+    "side": { "enum": ["long", "short", "pass"] },
+    "horizon": {
+      "type": "integer",
+      "minimum": 5,
+      "maximum": 120,
+      "description": "Calendar days until the horizon close."
+    },
+    "thesis": { "type": "string", "minLength": 1, "maxLength": 1500 },
+    "evidenceIds": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "type": "string" }
+    },
+    "fundamentals": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["price", "marketCap", "trailingPe", "peVsWatchlistMedian"],
+      "properties": {
+        "price": { "type": "number" },
+        "marketCap": { "type": "number" },
+        "trailingPe": { "type": ["number", "null"] },
+        "peVsWatchlistMedian": { "type": ["number", "null"] }
+      }
+    },
+    "technicals": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["sma20", "sma50", "rsi14", "atr14"],
+      "properties": {
+        "sma20": { "type": "number" },
+        "sma50": { "type": "number" },
+        "rsi14": { "type": "number" },
+        "atr14": { "type": "number" }
+      }
+    },
+    "entry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["low", "high"],
+      "properties": {
+        "low": { "type": "number" },
+        "high": { "type": "number" }
+      }
+    },
+    "exit": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["target", "invalidation"],
+      "properties": {
+        "target": { "type": "number" },
+        "invalidation": { "type": "number" }
+      }
+    },
+    "sentiment": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["score", "source", "volatilityNote"],
+      "properties": {
+        "score": { "type": "number", "minimum": -1, "maximum": 1 },
+        "source": { "enum": ["x", "headlines"] },
+        "volatilityNote": { "type": "string" }
+      }
+    },
+    "supplyChain": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["ticker", "source", "confidence"],
+        "properties": {
+          "ticker": { "type": "string" },
+          "source": { "enum": ["stated", "curated"] },
+          "confidence": { "type": "number", "minimum": 0, "maximum": 1 }
+        }
+      }
+    },
+    "themes": {
+      "type": "array",
+      "items": { "enum": ["ai", "quantum-cryptography"] }
+    },
+    "tags": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["size", "styles", "cycle", "sector"],
+      "properties": {
+        "size": { "enum": ["Large Cap", "Mid Cap", "Small Cap"] },
+        "styles": {
+          "type": "array",
+          "items": { "enum": ["Growth Stock", "Value Stock", "Dividend Stock"] }
+        },
+        "cycle": { "enum": ["Cyclical", "Defensive", ""] },
+        "sector": { "type": "string" }
+      }
+    },
+    "disclaimer": { "type": "string" }
+  }
+}

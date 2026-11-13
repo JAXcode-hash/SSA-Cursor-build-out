@@ -1,0 +1,5 @@
+{
+  "id": "ai",
+  "marketCapFloor": 2000000000,
+  "tickers": ["NVDA", "MSFT", "GOOGL", "AMZN", "AVGO", "AMD", "PLTR"]
+}

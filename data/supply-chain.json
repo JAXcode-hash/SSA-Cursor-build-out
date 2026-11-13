@@ -1,0 +1,12 @@
+{
+  "links": [
+    { "ticker": "NVDA", "related": "TSM", "relation": "supplier", "source": "curated", "confidence": 0.7 },
+    { "ticker": "NVDA", "related": "ASML", "relation": "supplier", "source": "curated", "confidence": 0.6 },
+    { "ticker": "AAPL", "related": "TSM", "relation": "supplier", "source": "curated", "confidence": 0.7 },
+    { "ticker": "AVGO", "related": "TSM", "relation": "supplier", "source": "curated", "confidence": 0.6 },
+    { "ticker": "AMD", "related": "TSM", "relation": "supplier", "source": "curated", "confidence": 0.7 },
+    { "ticker": "MSFT", "related": "NVDA", "relation": "supplier", "source": "curated", "confidence": 0.5 },
+    { "ticker": "AMZN", "related": "NVDA", "relation": "supplier", "source": "curated", "confidence": 0.4 },
+    { "ticker": "GOOGL", "related": "NVDA", "relation": "supplier", "source": "curated", "confidence": 0.4 }
+  ]
+}
