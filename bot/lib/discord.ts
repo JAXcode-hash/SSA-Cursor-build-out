@@ -201,6 +201,53 @@ export function earlyPayload(input: {
   };
 }
 
+export function paperReportPayload(input: {
+  searched: number;
+  open: Array<{
+    ticker: string;
+    companyName: string;
+    identifiedOn: string;
+    why: string;
+    valueGbp: number;
+    returnPct: number;
+  }>;
+  closedCount: number;
+  closedWinners: number;
+  closedAvgReturn: number | null;
+  closedAvgPnlGbp: number | null;
+}): DiscordPayload {
+  const lines =
+    input.open.length === 0
+      ? "No paper buy is open. Historic closed buys are in the training log."
+      : input.open
+          .map(
+            (buy, index) =>
+              `${index + 1}. ${buy.companyName} (${buy.ticker}) identified ${buy.identifiedOn}, now £${buy.valueGbp.toFixed(2)} (${formatPct(buy.returnPct)}). ${buy.why}`,
+          )
+          .join("\n");
+  return {
+    username: "SSA Desk",
+    embeds: [
+      {
+        title: "Paper book £100",
+        description: lines.slice(0, 4000),
+        color: 0x3498db,
+        fields: [
+          field("Searched", String(input.searched)),
+          field("Open stakes", String(input.open.length)),
+          field("Closed samples", String(input.closedCount)),
+          field("Closed winners", String(input.closedWinners)),
+          field("Average closed return", input.closedAvgReturn === null ? "n/a" : formatPct(input.closedAvgReturn)),
+          field("Average closed result", input.closedAvgPnlGbp === null ? "n/a" : `£${input.closedAvgPnlGbp.toFixed(2)}`),
+        ],
+        footer: {
+          text: "£100 paper stake from the identification close. Share-price change only, not a pound-dollar conversion and not an order.",
+        },
+      },
+    ],
+  };
+}
+
 export function closePayload(input: {
   ticker: string;
   side: OpenSide;

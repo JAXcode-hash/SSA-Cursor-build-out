@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { alertPayload, earlyPayload, incomePayload, sleevePayload } from "../bot/lib/discord.js";
+import { alertPayload, earlyPayload, incomePayload, paperReportPayload, sleevePayload } from "../bot/lib/discord.js";
 import { isEarly, rankByMove } from "../bot/lib/predict.js";
 import { riskReading } from "../bot/lib/risk.js";
 import { chooseSleeve } from "../bot/lib/sleeve.js";
@@ -12,6 +12,7 @@ import { closeReason } from "../bot/lib/returns.js";
 import { localChatUrl } from "../bot/lib/local-chat.js";
 import { routeName } from "../bot/lib/model-route.js";
 import { openOpportunity } from "../bot/lib/ledger.js";
+import { saveTriggerReport, stakeResult, summarizeBuys, trackPaperBuys } from "../bot/lib/trigger-log.js";
 import { openIsolatedDb } from "../bot/lib/db.js";
 import { validateAlert } from "../bot/lib/validate.js";
 import { DISCLAIMER } from "../bot/lib/types.js";
@@ -346,6 +347,62 @@ test("early signal requires leadership that the longer window has not confirmed"
   assert.deepEqual(ranked.other.map((row) => row.ticker), ["SMALL"]);
   assert.equal(payload.embeds[0]?.color, 0xe67e22);
   assert.match(payload.embeds[0]?.description ?? "", /New Leader Inc\. \(NEW\)/);
+});
+
+test("a £100 paper buy records the reason and the later share-price path", async () => {
+  const doubled = stakeResult(50, 75);
+  assert.equal(doubled.returnPct, 0.5);
+  assert.equal(doubled.valueGbp, 150);
+  assert.equal(doubled.pnlGbp, 50);
+  const bars = Array.from({ length: 16 }, (_, index) => ({
+    date: `2026-03-${String(index + 1).padStart(2, "0")}`,
+    close: 100 + index,
+  }));
+  const buys = trackPaperBuys({
+    ticker: "AAA",
+    companyName: "Aaa Inc.",
+    bars,
+    holdSessions: 5,
+    signalAt: (index) =>
+      index === 2 || index === 12
+        ? { signal: true, why: "20-day lead while the longer window lags", big: index === 12, excess20: 0.1, excessLong: -0.05, rsi14: 55 }
+        : null,
+  });
+  assert.equal(buys.length, 2);
+  assert.equal(buys[0]?.status, "closed");
+  assert.equal(buys[0]?.identifiedOn, "2026-03-03");
+  assert.equal(buys[0]?.why, "20-day lead while the longer window lags");
+  assert.equal(buys[0]?.sessionsHeld, 5);
+  assert.equal(buys[0]?.entryPrice, 102);
+  assert.equal(buys[0]?.valueGbp, stakeResult(102, 107).valueGbp);
+  assert.equal(buys[1]?.status, "open");
+  assert.equal(buys[1]?.identifiedOn, "2026-03-13");
+  const quiet = trackPaperBuys({
+    ticker: "BBB",
+    companyName: "Bbb Inc.",
+    bars,
+    signalAt: () => null,
+  });
+  assert.equal(quiet.length, 0);
+  const report = summarizeBuys(buys, 2);
+  const db = await openIsolatedDb();
+  await saveTriggerReport(db, report);
+  const stored = await db.query<Record<string, unknown>>("SELECT ticker, why, value_gbp FROM paper_buys ORDER BY identified_on");
+  assert.equal(stored.rows.length, 2);
+  assert.equal(String(stored.rows[0]?.why), "20-day lead while the longer window lags");
+  const marks = await db.query("SELECT buy_id FROM paper_marks");
+  assert.equal(marks.rows.length, buys[0]!.marks.length + buys[1]!.marks.length);
+  await db.close();
+  const payload = paperReportPayload({
+    searched: 2,
+    open: report.open,
+    closedCount: report.closed.length,
+    closedWinners: report.closedWinners,
+    closedAvgReturn: report.closedAvgReturn,
+    closedAvgPnlGbp: report.closedAvgPnlGbp,
+  });
+  assert.equal(payload.embeds[0]?.title, "Paper book £100");
+  assert.match(payload.embeds[0]?.description ?? "", /Aaa Inc\. \(AAA\)/);
 });
 
 test("isolated database closes", async () => {
