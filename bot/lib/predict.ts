@@ -4,6 +4,7 @@ import type { Bar } from "./types.js";
 
 export const EARLY_HORIZON = 20;
 export const EARLY_MIN_SESSIONS = 60;
+export const BIG_EXCESS = 0.08;
 
 export type EarlyFeatures = {
   excess20: number;
@@ -110,17 +111,35 @@ export type EarlyEvaluation = {
   hits: number;
   hitRate: number | null;
   avgExcess: number | null;
+  bigSignals: number;
+  bigHits: number;
+  bigHitRate: number | null;
+  bigAvgExcess: number | null;
   baseSamples: number;
   baseHits: number;
   baseRate: number | null;
   avgBaseExcess: number | null;
 };
 
+export function rankByMove<T extends { excess20: number }>(
+  picks: T[],
+  bigExcess = BIG_EXCESS,
+): { big: T[]; other: T[] } {
+  const ordered = [...picks].sort((left, right) => right.excess20 - left.excess20);
+  return {
+    big: ordered.filter((pick) => pick.excess20 >= bigExcess),
+    other: ordered.filter((pick) => pick.excess20 < bigExcess),
+  };
+}
+
 export function evaluateEarly(stock: Bar[], market: Bar[], horizon = EARLY_HORIZON): EarlyEvaluation {
   const rows = aligned(stock, market);
   let signals = 0;
   let hits = 0;
   let signalExcess = 0;
+  let bigSignals = 0;
+  let bigHits = 0;
+  let bigExcess = 0;
   let baseSamples = 0;
   let baseHits = 0;
   let baseExcess = 0;
@@ -141,6 +160,11 @@ export function evaluateEarly(stock: Bar[], market: Bar[], horizon = EARLY_HORIZ
     signals += 1;
     signalExcess += excess;
     if (excess > 0) hits += 1;
+    if (call.features.excess20 >= BIG_EXCESS) {
+      bigSignals += 1;
+      bigExcess += excess;
+      if (excess > 0) bigHits += 1;
+    }
   }
   return {
     horizon,
@@ -148,6 +172,10 @@ export function evaluateEarly(stock: Bar[], market: Bar[], horizon = EARLY_HORIZ
     hits,
     hitRate: signals === 0 ? null : round(hits / signals, 4),
     avgExcess: signals === 0 ? null : round(signalExcess / signals, 4),
+    bigSignals,
+    bigHits,
+    bigHitRate: bigSignals === 0 ? null : round(bigHits / bigSignals, 4),
+    bigAvgExcess: bigSignals === 0 ? null : round(bigExcess / bigSignals, 4),
     baseSamples,
     baseHits,
     baseRate: baseSamples === 0 ? null : round(baseHits / baseSamples, 4),
@@ -158,9 +186,12 @@ export function evaluateEarly(stock: Bar[], market: Bar[], horizon = EARLY_HORIZ
 export function combineEvaluations(parts: EarlyEvaluation[]): EarlyEvaluation {
   const signals = parts.reduce((sum, part) => sum + part.signals, 0);
   const hits = parts.reduce((sum, part) => sum + part.hits, 0);
+  const bigSignals = parts.reduce((sum, part) => sum + part.bigSignals, 0);
+  const bigHits = parts.reduce((sum, part) => sum + part.bigHits, 0);
   const baseSamples = parts.reduce((sum, part) => sum + part.baseSamples, 0);
   const baseHits = parts.reduce((sum, part) => sum + part.baseHits, 0);
   const signalExcess = parts.reduce((sum, part) => sum + (part.avgExcess ?? 0) * part.signals, 0);
+  const bigExcess = parts.reduce((sum, part) => sum + (part.bigAvgExcess ?? 0) * part.bigSignals, 0);
   const baseExcess = parts.reduce((sum, part) => sum + (part.avgBaseExcess ?? 0) * part.baseSamples, 0);
   return {
     horizon: EARLY_HORIZON,
@@ -168,6 +199,10 @@ export function combineEvaluations(parts: EarlyEvaluation[]): EarlyEvaluation {
     hits,
     hitRate: signals === 0 ? null : round(hits / signals, 4),
     avgExcess: signals === 0 ? null : round(signalExcess / signals, 4),
+    bigSignals,
+    bigHits,
+    bigHitRate: bigSignals === 0 ? null : round(bigHits / bigSignals, 4),
+    bigAvgExcess: bigSignals === 0 ? null : round(bigExcess / bigSignals, 4),
     baseSamples,
     baseHits,
     baseRate: baseSamples === 0 ? null : round(baseHits / baseSamples, 4),

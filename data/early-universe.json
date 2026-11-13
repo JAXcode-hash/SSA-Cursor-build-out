@@ -1,0 +1,21 @@
+{
+  "benchmark": "SPY",
+  "bigExcess": 0.08,
+  "tickers": [
+    "NVDA", "AMD", "AVGO", "AMAT", "LRCX", "KLAC", "MRVL", "ARM", "MU", "ANET",
+    "TSM", "ASML", "SNPS", "CDNS", "ON", "MPWR", "ALAB", "CRDO", "AMKR", "SMCI", "DELL",
+    "WDC", "STX",
+    "PLTR", "CRWD", "NET", "DDOG", "SNOW", "PANW", "SHOP", "NOW", "TEAM", "ZS", "MDB",
+    "HUBS", "BILL", "PATH", "IOT", "GTLB", "AI", "SOUN", "APP", "DUOL", "TTD", "ROKU",
+    "SNAP", "PINS", "U", "ESTC", "DOCN",
+    "TSLA", "AMZN", "META", "NFLX", "UBER", "ABNB", "BKNG", "DASH", "RBLX", "RDDT",
+    "MELI", "CART", "SPOT", "CVNA",
+    "COIN", "HOOD", "MSTR", "AFRM", "SOFI", "PYPL", "XYZ", "TOST", "MARA", "CLSK", "RIOT",
+    "VST", "GEV", "CEG", "VRT", "PWR", "ETN", "OKLO", "SMR", "ENPH", "FSLR",
+    "IONQ", "RGTI", "QBTS", "ARQQ",
+    "MRNA", "CRSP", "NTLA", "BEAM", "VKTX", "RXRX", "ILMN", "VRTX", "REGN", "NTRA",
+    "RKLB", "ASTS", "AXON", "KTOS", "LMT", "BA", "RIVN",
+    "BABA", "PDD", "BIDU",
+    "OXY", "DVN", "FANG"
+  ]
+}

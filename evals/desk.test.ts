@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { alertPayload, earlyPayload, incomePayload, sleevePayload } from "../bot/lib/discord.js";
-import { isEarly } from "../bot/lib/predict.js";
+import { isEarly, rankByMove } from "../bot/lib/predict.js";
 import { riskReading } from "../bot/lib/risk.js";
 import { chooseSleeve } from "../bot/lib/sleeve.js";
 import type { Bar } from "../bot/lib/types.js";
@@ -336,7 +336,14 @@ test("early signal requires leadership that the longer window has not confirmed"
     edge: true,
   });
   assert.equal(payload.embeds.length, 1);
-  assert.equal(payload.embeds[0]?.title, "Early signal");
+  assert.equal(payload.embeds[0]?.title, "Early positions");
+  const ranked = rankByMove([
+    { ticker: "SMALL", excess20: 0.03 },
+    { ticker: "LARGE", excess20: 0.12 },
+    { ticker: "MID", excess20: 0.09 },
+  ]);
+  assert.deepEqual(ranked.big.map((row) => row.ticker), ["LARGE", "MID"]);
+  assert.deepEqual(ranked.other.map((row) => row.ticker), ["SMALL"]);
   assert.equal(payload.embeds[0]?.color, 0xe67e22);
   assert.match(payload.embeds[0]?.description ?? "", /New Leader Inc\. \(NEW\)/);
 });
