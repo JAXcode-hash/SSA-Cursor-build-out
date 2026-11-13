@@ -1,7 +1,8 @@
-import { readFileSync } from "node:fs";
+import { readdirSync, readFileSync } from "node:fs";
+import { join } from "node:path";
 import { PGlite } from "@electric-sql/pglite";
 import { Pool } from "pg";
-import { migrationPath } from "./paths.js";
+import { migrationsDir } from "./paths.js";
 
 export type SqlClient = {
   query<T extends Record<string, unknown>>(
@@ -11,8 +12,6 @@ export type SqlClient = {
   exec(sql: string): Promise<void>;
   close(): Promise<void>;
 };
-
-const migrationSql = readFileSync(migrationPath, "utf8");
 
 function wrapPg(pool: Pool): SqlClient {
   return {
@@ -45,7 +44,12 @@ function wrapPglite(db: PGlite): SqlClient {
 }
 
 async function migrate(client: SqlClient): Promise<SqlClient> {
-  await client.exec(migrationSql);
+  const files = readdirSync(migrationsDir)
+    .filter((name) => name.endsWith(".sql"))
+    .sort();
+  for (const name of files) {
+    await client.exec(readFileSync(join(migrationsDir, name), "utf8"));
+  }
   return client;
 }
 
