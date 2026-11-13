@@ -1,0 +1,22 @@
+{
+  "name": "ssa-desk",
+  "private": true,
+  "type": "module",
+  "description": "Advisory US equity research desk",
+  "scripts": {
+    "check": "tsc --noEmit",
+    "test": "node --import tsx --test evals/desk.test.ts",
+    "dev": "agent-sdk dev"
+  },
+  "dependencies": {
+    "@electric-sql/pglite": "^0.5.16",
+    "@grok/agent-sdk": "^0.6.0",
+    "pg": "^8.23.1",
+    "zod": "^4.6.5"
+  },
+  "devDependencies": {
+    "@types/node": "^22.14.0",
+    "@types/pg": "^8.23.1",
+    "typescript": "6.0.3"
+  }
+}

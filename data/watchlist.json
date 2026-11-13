@@ -1,0 +1,28 @@
+{
+  "marketCapFloor": 2000000000,
+  "peExtremeMultiple": 3,
+  "moverThreshold": 0.03,
+  "tickers": [
+    "AAPL",
+    "MSFT",
+    "NVDA",
+    "GOOGL",
+    "AMZN",
+    "AVGO",
+    "AMD",
+    "PLTR",
+    "IBM",
+    "JPM",
+    "JNJ",
+    "KO",
+    "XOM",
+    "CAT",
+    "NEE",
+    "PLD",
+    "LIN",
+    "IONQ",
+    "RGTI",
+    "QBTS",
+    "ARQQ"
+  ]
+}

@@ -1,0 +1,13 @@
+{
+  "Defensive": ["Consumer Staples", "Health Care", "Utilities"],
+  "Cyclical": [
+    "Energy",
+    "Materials",
+    "Industrials",
+    "Consumer Discretionary",
+    "Financials",
+    "Information Technology",
+    "Communication Services",
+    "Real Estate"
+  ]
+}

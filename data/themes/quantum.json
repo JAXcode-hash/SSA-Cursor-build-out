@@ -1,0 +1,5 @@
+{
+  "id": "quantum-cryptography",
+  "marketCapFloor": 200000000,
+  "tickers": ["IBM", "GOOGL", "IONQ", "RGTI", "QBTS", "ARQQ"]
+}
