@@ -7,12 +7,13 @@ export type QuoteProfile = {
   marketCap: number | null;
   trailingPe: number | null;
   sector: string | null;
+  companyName: string | null;
 };
 
 export function parseChart(payload: unknown): { bars: Bar[]; profile: QuoteProfile } {
   const result = (payload as { chart?: { result?: Array<Record<string, unknown>> } }).chart?.result?.[0];
   if (!result) {
-    return { bars: [], profile: { price: null, marketCap: null, trailingPe: null, sector: null } };
+    return { bars: [], profile: { price: null, marketCap: null, trailingPe: null, sector: null, companyName: null } };
   }
   const meta = (result.meta ?? {}) as Record<string, unknown>;
   const timestamps = result.timestamp;
@@ -47,6 +48,7 @@ export function parseChart(payload: unknown): { bars: Bar[]; profile: QuoteProfi
       marketCap: typeof meta.marketCap === "number" ? meta.marketCap : null,
       trailingPe: null,
       sector: null,
+      companyName: typeof meta.longName === "string" ? meta.longName : typeof meta.shortName === "string" ? meta.shortName : null,
     },
   };
 }
@@ -73,6 +75,7 @@ export function parseQuoteSummary(payload: unknown): QuoteProfile {
     marketCap: raw(price, "marketCap"),
     trailingPe: raw(summary, "trailingPE"),
     sector: typeof profile?.sector === "string" ? profile.sector : null,
+    companyName: typeof price?.longName === "string" ? price.longName : null,
   };
 }
 
@@ -104,6 +107,7 @@ export async function dailyBars(ticker: string): Promise<{ bars: Bar[]; profile:
         marketCap: summary.marketCap ?? chart.profile.marketCap,
         trailingPe: summary.trailingPe,
         sector: summary.sector,
+        companyName: summary.companyName ?? chart.profile.companyName,
       },
     };
   } catch {

@@ -15,6 +15,7 @@ export type DiscordPayload = {
 const GREEN = 0x2ecc71;
 const RED = 0xe74c3c;
 const SLATE = 0x95a5a6;
+const GOLD = 0xf1c40f;
 
 function field(name: string, value: string): { name: string; value: string; inline: boolean } {
   return { name, value: value.slice(0, 1024), inline: true };
@@ -24,8 +25,18 @@ function dash(value: string): string {
   return value.trim() === "" ? "—" : value;
 }
 
-export function alertPayload(alert: Alert): DiscordPayload {
+export function dividendIncome(price: number, dividendPerShare: number): string {
+  const yieldPct = price > 0 ? (dividendPerShare / price) * 100 : 0;
+  return `${formatPrice(dividendPerShare)} a share, yield ${yieldPct.toFixed(2)}%`;
+}
+
+export function alertPayload(
+  alert: Alert,
+  facts?: { companyName?: string; dividendPerShare?: number | null },
+): DiscordPayload {
   const side = alert.side === "short" ? "Short" : "Long";
+  const companyName = facts?.companyName?.trim() || "—";
+  const dividend = facts?.dividendPerShare;
   const pe =
     alert.fundamentals.trailingPe === null ? "n/a" : alert.fundamentals.trailingPe.toFixed(2);
   const versus =
@@ -44,6 +55,7 @@ export function alertPayload(alert: Alert): DiscordPayload {
         description: alert.thesis.slice(0, 4000),
         color: alert.side === "short" ? RED : GREEN,
         fields: [
+          field("Company", companyName),
           field("Price", formatPrice(alert.fundamentals.price)),
           field("Market cap", formatMoney(alert.fundamentals.marketCap)),
           field("Trailing P/E", pe),
@@ -58,8 +70,40 @@ export function alertPayload(alert: Alert): DiscordPayload {
           field("Sentiment", `${alert.sentiment.source} ${alert.sentiment.score.toFixed(2)}`),
           field("Supply chain", chain),
           field("Theme", alert.themes.length === 0 ? "none" : alert.themes.join(", ")),
+          ...(typeof dividend === "number" && dividend > 0
+            ? [field("Dividend income", dividendIncome(alert.fundamentals.price, dividend))]
+            : []),
         ],
         footer: { text: alert.disclaimer },
+      },
+    ],
+  };
+}
+
+export function incomePayload(input: {
+  ticker: string;
+  companyName: string;
+  price: number;
+  dividendPerShare: number;
+  size: string;
+}): DiscordPayload {
+  return {
+    username: "SSA Desk",
+    embeds: [
+      {
+        title: `Income ${input.ticker}`,
+        description: `${input.companyName} pays a dividend. This is income information, not a long or a short.`,
+        color: GOLD,
+        fields: [
+          field("Company", input.companyName),
+          field("Ticker", input.ticker),
+          field("Price", formatPrice(input.price)),
+          field("Dividend income", dividendIncome(input.price, input.dividendPerShare)),
+          field("Size", input.size),
+        ],
+        footer: {
+          text: "Research alert only. Not a solicitation to buy or sell any security. Dividend income is the latest annual dividend per share from SEC divided into the latest price.",
+        },
       },
     ],
   };

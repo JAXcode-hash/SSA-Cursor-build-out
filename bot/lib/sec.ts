@@ -71,6 +71,11 @@ function ttmEps(rows: SecRow[]): number | null {
   return typeof annual?.val === "number" ? annual.val : null;
 }
 
+export function entityName(facts: unknown): string {
+  const name = (facts as { entityName?: unknown }).entityName;
+  return typeof name === "string" ? name.trim() : "";
+}
+
 export function figuresFromFacts(facts: unknown): SecFigures {
   let revenueGrowth: number | null = null;
   for (const concept of REVENUE_CONCEPTS) {

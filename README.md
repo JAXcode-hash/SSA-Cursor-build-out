@@ -16,7 +16,7 @@ npm run check
 
 `DISCORD_WEBHOOK_URL` is the channel incoming webhook. See `docs/discord.md`. `X_BEARER_TOKEN` switches sentiment from headlines to X. `SEC_USER_AGENT` should identify this desk to EDGAR. `MODEL_ROUTE` and the local endpoint are described in `docs/local-model.md`.
 
-The weekday schedule is `30 11 * * 1-5` UTC (11:30 London during GMT, 12:30 London during British Summer Time).
+The weekday schedule is `30 11 * * 1-5` UTC (11:30 London during GMT, 12:30 London during British Summer Time). One run reviews the configured watchlist, currently 21 names, not the whole market. Each accepted long is its own green message. Each accepted short is its own red message. Each dividend payer also gets a separate income message with the annual dividend per share and the yield.
 
 ## Contract
 
